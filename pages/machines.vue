@@ -1,11 +1,11 @@
 <template>
   <div>
     <h1>Máquinas</h1>
-    <a-table :columns="columns" :data-source="data">
+    <a-table :columns="columns" :data-source="machines">
       <div
-        class="icon-wrapper"
         slot-scope="so"
         slot="so"
+        class="icon-wrapper"
       >
         <a-icon :type="so" />
       </div>
@@ -13,7 +13,6 @@
         <CommandForm />
         <CommandForm />
       </div>
-      <p>{{ data.name }}</p>
     </a-table>
   </div>
 </template>
@@ -38,20 +37,20 @@ const columns = [
   }
 ]
 
-const data = Array.from({ length: 6 }).map((_, index) => ({
-  id: +index,
-  so: 'windows',
-  ip: '123.345.678.890',
-  user: 'Carlos José'
-}))
-
 export default {
   components: {
     CommandForm
   },
+  mounted () {
+    this.$firebase.ref('/machines').on('value', (snap) => {
+      const machines = snap.val()
+      console.log(machines)
+      this.machines = machines
+    })
+  },
   data () {
     return {
-      data,
+      machines: [],
       columns,
       showDetails: false
     }
