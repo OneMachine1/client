@@ -1,12 +1,11 @@
 <template>
   <div class="container">
     <div>
-      <logo />
       <h1 class="title">
-        access-one-hack
+        AccessOne HackAthon
       </h1>
       <h2 class="subtitle">
-        AccessOne Hack
+        Bem-vindo
       </h2>
       <div class="links">
         <a
@@ -27,16 +26,6 @@
     </div>
   </div>
 </template>
-
-<script>
-import Logo from '~/components/Logo.vue'
-
-export default {
-  components: {
-    Logo
-  }
-}
-</script>
 
 <style>
 .container {
