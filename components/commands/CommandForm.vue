@@ -1,104 +1,90 @@
 <template>
   <div>
-    <a-button type="primary" @click="showDrawer">
-      <a-icon type="plus" />
-      Agendar comando
-    </a-button>
-    <a-drawer
-      title="Agendar comando"
-      :width="720"
-      @close="onClose"
-      :visible="visible"
-      :wrapStyle="{
-        height: 'calc(100% - 108px)',
-        overflow: 'auto',
-        paddingBottom: '108px'
+    <a-form :form="form" layout="vertical">
+      <a-row :gutter="16">
+        <a-col :span="24">
+          <a-form-item>
+            <a-card v-if="machine" title="Máquina selecionada:">
+              <p><strong>SO: </strong>{{ machine.so }}</p>
+              <p><strong>IP: </strong>{{ machine.ip }}</p>
+              <p><strong>Usuário: </strong>{{ machine.user }}</p>
+            </a-card>
+          </a-form-item>
+        </a-col>
+      </a-row>
+      <a-row :gutter="16">
+        <a-col :span="12">
+          <a-form-item label="Comandos">
+            <a-select
+              v-decorator="['command', {
+                rules: [
+                  {
+                    required: true,
+                    message: 'O campo comando é obrigatório'
+                  }
+                ]
+              }]"
+              placeholder="Escolha um comando"
+            >
+              <a-select-option value="reset">Resetar serviço</a-select-option>
+              <a-select-option value="clear">Limpar cache</a-select-option>
+              <a-select-option value="sync">Sincronizar dados</a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-item label="Número de tentativas">
+            <a-input-number
+              v-decorator="[
+                'attemps', {
+                  type: 'number'
+                }
+              ]"
+              style="width: 100%"
+              :min="1"
+              :max="10"
+            />
+          </a-form-item>
+        </a-col>
+      </a-row>
+      <a-row :gutter="16">
+        <a-col :span="12">
+          <a-form-item label="Dia da execução">
+            <a-date-picker v-decorator="['date']" style="width: 100%" placeholder="Selecione o dia" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-item label="Hora da execução">
+            <a-time-picker v-decorator="['hour']" style="width: 100%" placeholder="Selecione o horário" />
+          </a-form-item>
+        </a-col>
+      </a-row>
+      <a-row :gutter="16">
+        <a-col :span="24">
+          <a-form-item label="Observação">
+            <a-textarea
+              v-decorator="['comment']"
+              placeholder="Adicione alguma observação para o comando"
+              :autosize="{ minRows: 2, maxRows: 6 }"
+            />
+          </a-form-item>
+        </a-col>
+      </a-row>
+    </a-form>
+    <div
+      :style="{
+        position: 'absolute',
+        left: 0,
+        bottom: 0,
+        width: '100%',
+        borderTop: '1px solid #e9e9e9',
+        padding: '10px 16px',
+        background: '#fff',
+        textAlign: 'right',
       }"
     >
-      <a-form :form="form" layout="vertical" hideRequiredMark>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="Name">
-              <a-input
-                v-decorator="['name', {
-                  rules: [{ required: true, message: 'Please enter user name' }]
-                }]"
-                placeholder="Please enter user name"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="Url">
-              <a-input
-                v-decorator="['url', {
-                  rules: [{ required: true, message: 'please enter url' }]
-                }]"
-                style="width: 100%"
-                addonBefore="http://"
-                addonAfter=".com"
-                placeholder="please enter url"
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="Owner">
-              <a-select
-                v-decorator="[
-                  'owner',
-                  {
-                    rules: [{ required: true, message: 'Please select an owner' }]
-                  }
-                ]"
-                placeholder="Please a-s an owner"
-              >
-                <a-select-option value="xiao">Xiaoxiao Fu</a-select-option>
-                <a-select-option value="mao">Maomao Zhou</a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="Type">
-              <a-select
-                v-decorator="['type', {
-                  rules: [
-                    {
-                      required: true,
-                      message: 'Please choose the type'
-                    }
-                  ]
-                }]"
-                placeholder="Please choose the type"
-              >
-                <a-select-option value="private">Private</a-select-option>
-                <a-select-option value="public">Public</a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
-      </a-form>
-      <div
-        :style="{
-          position: 'absolute',
-          left: 0,
-          bottom: 0,
-          width: '100%',
-          borderTop: '1px solid #e9e9e9',
-          padding: '10px 16px',
-          background: '#fff',
-          textAlign: 'right',
-        }"
-      >
-        <a-button
-          :style="{marginRight: '8px'}"
-          @click="onClose"
-        >
-          Cancel
-        </a-button>
-        <a-button @click="onClose" type="primary">Submit</a-button>
-      </div>
-    </a-drawer>
+      <a-button :loading="loading" @click="save()" type="primary">Submit</a-button>
+    </div>
   </div>
 </template>
 
@@ -106,17 +92,49 @@
 export default {
   data () {
     return {
+      loading: false,
       form: this.$form.createForm(this),
       visible: false
     }
   },
   methods: {
-    showDrawer () {
-      this.visible = true
-    },
-    onClose () {
-      this.visible = false
+    save () {
+      this.form.validateFields((err, values) => {
+        if (!err) {
+          console.log('Received values of form: ', values)
+          this.loading = true
+          const commandsRef = this.$firebase.ref(`/machines/${this.machine.id}/commands`)
+          const newCommandRef = commandsRef.push()
+          newCommandRef.set(
+            Object.keys(values).reduce((acc, key) => ({
+              ...acc,
+              ...(values[key] && { [key]: values[key] })
+            }), {}),
+            (error) => {
+              this.loading = false
+              this.form.resetFields()
+              this.$emit('submit')
+              if (error) {
+                console.log(error)
+                this.$notification.open({
+                  message: 'Um error inesperado ocorreu!',
+                  description: 'Tente novamente, caso o erro persista entre em contato com o suporte',
+                  icon: <a-icon type="frown" style="color: #F73E20" />,
+                  duration: 0
+                })
+              } else {
+                this.$notification.open({
+                  message: 'Comando cadastrado com sucesso',
+                  description: 'O comando será executado no dia e horário escolhidos, caso uma data não tenha sido determinada, o comando será executado assim que possível',
+                  icon: <a-icon type="smile" style="color: #20F73A" />,
+                  duration: 0
+                })
+              }
+            })
+        }
+      })
     }
-  }
+  },
+  props: ['machine']
 }
 </script>
